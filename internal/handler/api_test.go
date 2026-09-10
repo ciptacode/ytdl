@@ -39,6 +39,25 @@ func TestAPIGetInfo_NonYouTubeURL(t *testing.T) {
 	}
 }
 
+func TestAPIGetInfo_TikTokURL(t *testing.T) {
+	info := &ytdlp.VideoInfo{
+		Title:   "A TikTok",
+		Formats: []ytdlp.Format{{FormatID: "download", Ext: "mp4", Resolution: "unknown"}},
+	}
+	r := setupAPIRouter(&mockService{info: info})
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/info?url=https://www.tiktok.com/@user/video/123", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for TikTok URL, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "A TikTok") {
+		t.Errorf("expected title in body, got: %s", w.Body.String())
+	}
+}
+
 func TestAPIGetInfo_Success(t *testing.T) {
 	info := &ytdlp.VideoInfo{
 		Title:     "My Video",

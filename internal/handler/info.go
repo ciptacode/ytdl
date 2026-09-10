@@ -19,9 +19,9 @@ func NewInfoHandler(svc ytdlp.Downloader) *InfoHandler {
 
 func (h *InfoHandler) Handle(c *gin.Context) {
 	rawURL := strings.TrimSpace(c.PostForm("url"))
-	if !IsYouTubeURL(rawURL) {
+	if !IsSupportedURL(rawURL) {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"Error": "Invalid URL. Only YouTube is supported.",
+			"Error": "Invalid URL. Only YouTube and TikTok are supported.",
 		})
 		return
 	}
@@ -48,4 +48,20 @@ func IsYouTubeURL(rawURL string) bool {
 	}
 	host := strings.ToLower(u.Hostname())
 	return host == "youtube.com" || host == "www.youtube.com" || host == "youtu.be"
+}
+
+// IsTikTokURL exported for testing. Matches tiktok.com and any subdomain
+// (www, m, vt, vm, and regional hosts like us.tiktok.com).
+func IsTikTokURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Scheme == "" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	return host == "tiktok.com" || strings.HasSuffix(host, ".tiktok.com")
+}
+
+// IsSupportedURL reports whether rawURL points at a source we can download from.
+func IsSupportedURL(rawURL string) bool {
+	return IsYouTubeURL(rawURL) || IsTikTokURL(rawURL)
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/fahrigunadi/ytdl/internal/ytdlp"
 )
 
-var validExt = map[string]bool{"mp4": true, "webm": true, "m4a": true, "opus": true, "mkv": true}
+var validExt = map[string]bool{"mp4": true, "webm": true, "m4a": true, "opus": true, "mkv": true, "mp3": true}
 
 var validFormatID = regexp.MustCompile(`^[a-zA-Z0-9_\-+]+$`)
 
@@ -43,14 +43,14 @@ func (h *DownloadHandler) Handle(c *gin.Context) {
 	}
 	rawURL := string(decoded)
 	if !validExt[ext] {
-		c.String(http.StatusBadRequest, "invalid ext: must be one of mp4, webm, m4a, opus, mkv")
+		c.String(http.StatusBadRequest, "invalid ext: must be one of mp4, webm, m4a, opus, mkv, mp3")
 		return
 	}
 	if !validFormatID.MatchString(formatID) {
 		c.String(http.StatusBadRequest, "invalid format_id")
 		return
 	}
-	if !IsYouTubeURL(rawURL) {
+	if !IsSupportedURL(rawURL) {
 		c.String(http.StatusBadRequest, "invalid URL")
 		return
 	}
@@ -99,6 +99,8 @@ func mimeForExt(ext string) string {
 		return "audio/mp4"
 	case "opus":
 		return "audio/ogg"
+	case "mp3":
+		return "audio/mpeg"
 	case "mkv":
 		return "video/x-matroska"
 	default:

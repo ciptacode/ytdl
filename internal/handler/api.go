@@ -37,7 +37,7 @@ type apiInfoResponse struct {
 	Formats   []apiFormat `json:"formats"`
 }
 
-// GetInfo handles GET /api/info?url=<youtube-url>
+// GetInfo handles GET /api/info?url=<youtube-or-tiktok-url>
 // Returns JSON list of available formats with ready-to-use download_url per format.
 func (h *APIHandler) GetInfo(c *gin.Context) {
 	rawURL := strings.TrimSpace(c.Query("url"))
@@ -46,8 +46,8 @@ func (h *APIHandler) GetInfo(c *gin.Context) {
 		return
 	}
 
-	if !IsYouTubeURL(rawURL) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "only YouTube URLs are supported"})
+	if !IsSupportedURL(rawURL) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "only YouTube and TikTok URLs are supported"})
 		return
 	}
 
