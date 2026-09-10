@@ -104,6 +104,7 @@ func TestIsYouTubeURL(t *testing.T) {
 		{"https://www.youtube.com/watch?v=abc", true},
 		{"https://youtu.be/abc", true},
 		{"https://twitter.com/video", false},
+		{"https://www.tiktok.com/@user/video/123", false},
 		{"not-a-url", false},
 		{"", false},
 	}
@@ -111,6 +112,48 @@ func TestIsYouTubeURL(t *testing.T) {
 		got := handler.IsYouTubeURL(tt.raw)
 		if got != tt.want {
 			t.Errorf("IsYouTubeURL(%q) = %v, want %v", tt.raw, got, tt.want)
+		}
+	}
+}
+
+func TestIsTikTokURL(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want bool
+	}{
+		{"https://www.tiktok.com/@user/video/123", true},
+		{"https://tiktok.com/@user/video/123", true},
+		{"https://vt.tiktok.com/ZSabc123/", true},
+		{"https://vm.tiktok.com/ZSabc123/", true},
+		{"https://m.tiktok.com/v/123.html", true},
+		{"https://us.tiktok.com/@user/video/123", true},
+		{"https://tiktok.com.evil.com/x", false},
+		{"https://youtube.com/watch?v=abc", false},
+		{"not-a-url", false},
+		{"", false},
+	}
+	for _, tt := range tests {
+		got := handler.IsTikTokURL(tt.raw)
+		if got != tt.want {
+			t.Errorf("IsTikTokURL(%q) = %v, want %v", tt.raw, got, tt.want)
+		}
+	}
+}
+
+func TestIsSupportedURL(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want bool
+	}{
+		{"https://youtu.be/abc", true},
+		{"https://www.tiktok.com/@user/video/123", true},
+		{"https://twitter.com/video", false},
+		{"", false},
+	}
+	for _, tt := range tests {
+		got := handler.IsSupportedURL(tt.raw)
+		if got != tt.want {
+			t.Errorf("IsSupportedURL(%q) = %v, want %v", tt.raw, got, tt.want)
 		}
 	}
 }

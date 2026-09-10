@@ -80,6 +80,41 @@ func TestDownloadHandler_StreamsBody(t *testing.T) {
 	}
 }
 
+func TestDownloadHandler_TikTokURL(t *testing.T) {
+	content := "fake tiktok bytes"
+	svc := &mockStreamService{reader: io.NopCloser(strings.NewReader(content))}
+	r := setupDownloadRouter(svc)
+
+	req := httptest.NewRequest(http.MethodGet,
+		"/download?url="+b64("https://www.tiktok.com/@user/video/123")+"&format_id=download&ext=mp4&title=A+TikTok", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	if w.Body.String() != content {
+		t.Errorf("expected body %q, got %q", content, w.Body.String())
+	}
+}
+
+func TestDownloadHandler_AcceptsMP3Ext(t *testing.T) {
+	svc := &mockStreamService{reader: io.NopCloser(strings.NewReader("audio"))}
+	r := setupDownloadRouter(svc)
+
+	req := httptest.NewRequest(http.MethodGet,
+		"/download?url="+b64("https://www.tiktok.com/@user/video/123")+"&format_id=audio&ext=mp3&title=song", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200 for mp3 ext, got %d: %s", w.Code, w.Body.String())
+	}
+	if ct := w.Header().Get("Content-Type"); ct != "audio/mpeg" {
+		t.Errorf("expected Content-Type audio/mpeg, got %q", ct)
+	}
+}
+
 func TestSanitizeFilename(t *testing.T) {
 	tests := []struct {
 		input string

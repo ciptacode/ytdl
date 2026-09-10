@@ -55,6 +55,36 @@ func TestParseVideoInfo_DeduplicatesByResolution(t *testing.T) {
 	}
 }
 
+func TestParseVideoInfo_PreservesUnknownHeightVariants(t *testing.T) {
+	// TikTok-style payload: several progressive MP4s with no height reported.
+	// They must not collapse into a single "unknown" entry.
+	raw := &rawVideoInfo{
+		Title: "A TikTok",
+		Formats: []rawFormat{
+			{FormatID: "download", Ext: "mp4", Height: 0, VCodec: "h264", ACodec: "aac", Filesize: 0},
+			{FormatID: "download_addr", Ext: "mp4", Height: 0, VCodec: "h264", ACodec: "aac", Filesize: 0},
+			{FormatID: "play_addr", Ext: "mp4", Height: 0, VCodec: "h264", ACodec: "aac", Filesize: 0},
+			{FormatID: "mp3-128", Ext: "mp3", VCodec: "none", ACodec: "mp3", ABR: 128},
+		},
+	}
+
+	info := parseVideoInfo(raw)
+
+	if len(info.Formats) != 4 {
+		t.Fatalf("expected 4 formats (3 video variants + 1 audio), got %d", len(info.Formats))
+	}
+
+	ids := map[string]bool{}
+	for _, f := range info.Formats {
+		ids[f.FormatID] = true
+	}
+	for _, want := range []string{"download", "download_addr", "play_addr", "mp3-128"} {
+		if !ids[want] {
+			t.Errorf("expected format %q to be preserved, got %v", want, ids)
+		}
+	}
+}
+
 func TestResolutionLabel_Video(t *testing.T) {
 	got := resolutionLabel(rawFormat{Height: 720, VCodec: "avc1"}, false)
 	if got != "720p" {

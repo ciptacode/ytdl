@@ -136,7 +136,11 @@ func parseVideoInfo(raw *rawVideoInfo) *VideoInfo {
 		Duration:  raw.Duration,
 	}
 
-	// bestVideo: resolution → best Format seen so far (highest filesize)
+	// bestVideo: dedup key → best Format seen so far (highest filesize).
+	// Key is the resolution label, so multiple encodes of the same resolution
+	// collapse to one. When height is unknown (0) — common for TikTok, which
+	// returns several progressive MP4s such as watermark / no-watermark — the
+	// format ID is appended so every distinct variant survives.
 	bestVideo := map[string]Format{}
 	videoOrder := []string{}
 
@@ -179,18 +183,22 @@ func parseVideoInfo(raw *rawVideoInfo) *VideoInfo {
 			NeedsAudioMerge: isVideoOnly,
 		}
 
-		if prev, exists := bestVideo[res]; !exists {
-			bestVideo[res] = candidate
-			videoOrder = append(videoOrder, res)
+		key := res
+		if f.Height == 0 {
+			key = res + "-" + f.FormatID
+		}
+		if prev, exists := bestVideo[key]; !exists {
+			bestVideo[key] = candidate
+			videoOrder = append(videoOrder, key)
 		} else if f.Filesize > prev.Filesize {
-			bestVideo[res] = candidate
+			bestVideo[key] = candidate
 		}
 	}
 
 	// prepend video formats (ordered by first-seen resolution, ascending)
 	var videoFormats []Format
-	for _, res := range videoOrder {
-		videoFormats = append(videoFormats, bestVideo[res])
+	for _, key := range videoOrder {
+		videoFormats = append(videoFormats, bestVideo[key])
 	}
 	info.Formats = append(videoFormats, info.Formats...)
 	return info

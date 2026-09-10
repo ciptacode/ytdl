@@ -18,6 +18,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(middleware.CORS())
 	r.SetFuncMap(handler.TemplateFuncs())
 	r.LoadHTMLGlob("web/templates/*")
 	r.Static("/static", "web/static")
